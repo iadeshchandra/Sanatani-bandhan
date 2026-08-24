@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import { get } from 'idb-keyval';
 import QRCode from 'qrcode';
 import { DevoteeMember, TreasuryTransaction, WorkspaceConfig, PoojaBooking } from '../types';
 
@@ -13,9 +14,9 @@ export const generateCryptoDocRef = (prefix = 'SB'): string => {
 /**
  * Resolve active workspace logo safely with format inspection
  */
-export const getActiveWorkspaceLogo = (workspaceId: string): string | null => {
+export const getActiveWorkspaceLogo = async (workspaceId: string): Promise<string | null> => {
   try {
-    const customLogo = localStorage.getItem(`sb_logo_${workspaceId}`);
+    const customLogo = await get(`sb_logo_${workspaceId}`);
     if (customLogo && customLogo.startsWith('data:image/')) {
       return customLogo;
     }

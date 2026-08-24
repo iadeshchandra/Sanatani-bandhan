@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuthWorkspace } from '../../context/AuthWorkspaceContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useWorkspaceTaxonomy } from '../../hooks/useWorkspaceTaxonomy';
 import { useData } from '../../context/DataContext';
 import { calculatePanchang } from '../../utils/panchang';
 import { trackViewItem, trackShare } from '../../utils/gtm';
@@ -43,14 +44,14 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
     else if (onSelectModule) onSelectModule(mod);
   };
   const { activeWorkspace, currentRole } = useAuthWorkspace();
-  const { language, t, getTaxonomy } = useLanguage();
+  const { language, t } = useLanguage();
   const { devotees, treasury, poojaBookings, cows, shlokas } = useData();
   const { showToast } = useToast();
 
   const [currentShlokaIndex, setCurrentShlokaIndex] = useState(0);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
-  const taxonomy = getTaxonomy(activeWorkspace.type);
+  const taxonomy = useWorkspaceTaxonomy();
   const panchang = calculatePanchang();
 
   // Metrics
@@ -105,7 +106,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200 flex flex-col h-full">
+    <div className="space-y-6 animate-in fade-in duration-200 flex flex-col">
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm shrink-0 relative overflow-hidden">
         <div className="relative z-10">
@@ -186,8 +187,8 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 grow overflow-hidden">
-        <section className="lg:col-span-2 flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="lg:col-span-2 flex flex-col gap-6">
           {/* Daily Rotating Shloka Engine */}
           <div className="rounded-xl bg-white border border-slate-200 shadow-sm flex flex-col">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -239,7 +240,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
         </section>
 
         {/* Right 1 Col */}
-        <section className="flex flex-col gap-6 overflow-y-auto custom-scrollbar">
+        <section className="flex flex-col gap-6">
           {/* Quick Command Hub */}
           <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
             <h3 className="font-bold text-xs text-slate-800 uppercase tracking-wide mb-1">Dharmic Action Hub</h3>
@@ -266,11 +267,24 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     <QrCode className="w-4 h-4 text-indigo-500" />
-                    <span>My Devotee Smart Card</span>
+                    <span>My {taxonomy.memberNoun} Smart Card</span>
                   </div>
                   <ChevronRight className="w-3 h-3 text-slate-400" />
                 </button>
               )}
+
+              <button
+                type="button"
+                id="dashboard-dharmic-ai-btn"
+                onClick={() => handleNav('dharmic-assistant')}
+                className="w-full p-2.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 text-amber-900 font-semibold text-[11px] flex items-center justify-between border border-amber-500/30 transition-colors cursor-pointer group"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="font-serif font-bold text-amber-700 text-sm">ॐ</span>
+                  <span>Dharmic AI Assistant (Gemini 3.7)</span>
+                </div>
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+              </button>
 
               <button
                 type="button"
@@ -291,7 +305,7 @@ export const DashboardHome: React.FC<DashboardHomeProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                  <span>Bulk CSV Devotee Ingestion</span>
+                  <span>Bulk CSV {taxonomy.memberNoun} Ingestion</span>
                 </div>
                 <ChevronRight className="w-3 h-3 text-slate-400" />
               </button>

@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useInitialData } from './AppInitializer';
+import { set } from 'idb-keyval';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   DevoteeMember,
   FamilyHousehold,
@@ -95,45 +97,42 @@ export const INITIAL_DEVOTEES: DevoteeMember[] = [
   },
   {
     id: 'dev-104',
-    workspaceId: 'ws-mandir',
-    fullName: 'Sri Subhash Chandra Banerjee',
-    spiritualName: 'Subhasish Das',
-    phone: '+91 93310 44556',
-    email: 'subhash.banerjee@kolkata.in',
-    pin: '5001',
-    role: 'devotee',
-    sevaIndex: 510,
-    sevaTier: 'Kormi',
+    workspaceId: 'ws-goshala',
+    fullName: 'Pt. Hariprasad Dwivedi',
+    phone: '+91 98110 55667',
+    email: 'hari.dwivedi@vrindavan.org',
+    pin: '1008',
+    role: 'head_admin',
+    sevaIndex: 940,
+    sevaTier: 'Ratna',
     gotra: 'Bharadwaja',
-    pravara: 'Bharadwaja, Barhaspatya, Angirasa',
-    varnaKul: 'Radhi Kulin',
-    address: 'Chetganj, Varanasi',
-    birthDate: '1990-09-22',
+    varnaKul: 'Kanyakubja Brahmin',
+    address: 'Parikrama Marg, Raman Reti, Vrindavan',
     activeStatus: 'Active',
-    totalDonated: 28000,
-    volunteerHours: 85,
+    totalDonated: 240000,
+    volunteerHours: 500,
     qrCodeRef: 'QR-SB-DEV104',
-    joinedDate: '2023-04-18',
+    joinedDate: '2021-08-10',
   },
   {
     id: 'dev-105',
-    workspaceId: 'ws-goshala',
-    fullName: 'Sri Mohan Lal Yadav',
-    phone: '+91 98111 77665',
-    email: 'mohan.gauseva@gmail.com',
-    pin: '7766',
-    role: 'manager',
-    sevaIndex: 940,
+    workspaceId: 'ws-gurukul',
+    fullName: 'Acharya Vidyadhar Shukla',
+    phone: '+91 94066 33221',
+    email: 'acharyas@sandipanigurukul.edu.in',
+    pin: '1008',
+    role: 'head_admin',
+    sevaIndex: 990,
     sevaTier: 'Ratna',
-    gotra: 'Yadu',
-    varnaKul: 'Gopala Vansh',
-    address: 'Govardhan Marg, Vrindavan',
+    gotra: 'Gautama',
+    varnaKul: 'Madhyandina Shukla Yajurveda',
+    address: 'Narmada Ghat Road, Ujjain',
     activeStatus: 'Active',
-    totalDonated: 45000,
-    volunteerHours: 650,
+    totalDonated: 180000,
+    volunteerHours: 600,
     qrCodeRef: 'QR-SB-DEV105',
-    joinedDate: '2021-08-01',
-  },
+    joinedDate: '2020-01-01',
+  }
 ];
 
 export const INITIAL_FAMILIES: FamilyHousehold[] = [
@@ -143,93 +142,118 @@ export const INITIAL_FAMILIES: FamilyHousehold[] = [
     familyName: 'Shastri Parivar (Kashi)',
     kartaDevoteeId: 'dev-101',
     gotra: 'Shandilya',
-    kuladevata: 'Mata Annapurna Devi',
-    residenceAddress: 'Near Dasaswamedh Ghat, Varanasi',
+    kuladevata: 'Kashi Vishwanath & Annapurna Devi',
+    residenceAddress: 'B-14/88 Dasaswamedh, Varanasi',
     contactPhone: '+91 98765 11223',
-    memberIds: ['dev-101'],
-    totalFamilyDonations: 150000,
-    lastChandaDate: '2026-08-10',
-    notes: 'Generations of Vedic scholars and Sanskrit teachers at the Mandir.',
+    memberIds: ['dev-101', 'dev-102'],
+    totalFamilyDonations: 215000,
+    lastChandaDate: '2026-08-15',
+    notes: 'Long-standing patron family supporting Nitya Annadanam and Veda Pathashala.',
   },
   {
     id: 'fam-02',
     workspaceId: 'ws-mandir',
-    familyName: 'Rathore Kshatriya Parivar',
+    familyName: 'Rathore Royal Trust Family',
     kartaDevoteeId: 'dev-103',
     gotra: 'Vatsa',
-    kuladevata: 'Kuldevi Sri Bithur Mata',
-    residenceAddress: 'Durga Kund Road, Varanasi',
+    kuladevata: 'Maa Chamunda & Surya Bhagwan',
+    residenceAddress: 'Durga Kund Manor, Varanasi',
     contactPhone: '+91 94140 77889',
     memberIds: ['dev-103'],
     totalFamilyDonations: 500000,
     lastChandaDate: '2026-08-01',
-    notes: 'Patron for Mandir Nirman and Annakshetra renovation.',
+    notes: 'Sanatan heritage patron. Sponsored gold Kalash for temple shikhar.',
   },
 ];
 
 export const INITIAL_VANSHAVALI: VanshavaliNode = {
-  id: 'node-root',
-  name: 'Pandit Mahadev Shastri (1890 - 1965)',
+  id: 'node-root-01',
+  name: 'Maharshi Shandilya Gotra Parivar (Adi Purusha: Pt. Bholanath Shastri)',
   generation: 1,
   gotra: 'Shandilya',
-  birthYear: '1890',
-  deathYear: '1965',
-  relation: 'Prapitamaha (Great Grandfather)',
-  spouse: 'Mata Parvati Devi',
-  location: 'Varanasi',
-  notes: 'Veda Murthy, scholar at Kashi Naresh Raj Sabha',
+  birthYear: '1880',
+  deathYear: '1952',
+  relation: 'Progenitor / Mula Purusha',
+  spouse: 'Mata Saraswati Devi (1888-1960)',
+  location: 'Varanasi Kshetra',
+  notes: 'Revered Pandit of Kashi Sanskrit Mahavidyalaya and Rigvedic Scholar.',
   children: [
     {
-      id: 'node-2-1',
-      name: 'Pandit Vishwanath Shastri (1922 - 1998)',
+      id: 'node-gen2-01',
+      name: 'Pt. Dinabandhu Shastri',
       generation: 2,
       gotra: 'Shandilya',
-      birthYear: '1922',
-      deathYear: '1998',
-      relation: 'Pitamaha (Grandfather)',
-      spouse: 'Mata Saraswati Devi',
+      birthYear: '1912',
+      deathYear: '1984',
+      relation: 'Eldest Son',
+      spouse: 'Mata Janaki Devi',
       location: 'Varanasi',
+      notes: 'Astrologer to Kashi Naresh & Trustee of Annapurna Mandir.',
       children: [
         {
-          id: 'node-3-1',
-          name: 'Sri Rameshwar Shastri (b. 1975)',
+          id: 'node-gen3-01',
+          name: 'Pt. Loknath Shastri',
           generation: 3,
           gotra: 'Shandilya',
-          birthYear: '1975',
-          relation: 'Pita / Karta (Current Head)',
-          spouse: 'Smt. Shobha Shastri',
+          birthYear: '1945',
+          relation: 'Son',
+          spouse: 'Smt. Shanti Devi',
           location: 'Varanasi',
           children: [
             {
-              id: 'node-4-1',
-              name: 'Ayushman Raghav Shastri (b. 2005)',
+              id: 'node-gen4-01',
+              name: 'Sri Rameshwar Shastri (Karta)',
               generation: 4,
               gotra: 'Shandilya',
-              birthYear: '2005',
-              relation: 'Putra (Son)',
+              birthYear: '1975',
+              relation: 'Current Karta (Registered Devotee #101)',
+              spouse: 'Smt. Gayatri Devi',
               location: 'Varanasi',
-              notes: 'Studying Rigveda Samhita at Gurukul',
-            },
-            {
-              id: 'node-4-2',
-              name: 'Ayushmati Vaidehi Shastri (b. 2008)',
-              generation: 4,
-              gotra: 'Shandilya',
-              birthYear: '2008',
-              relation: 'Putri (Daughter)',
-              location: 'Varanasi',
+              children: [
+                {
+                  id: 'node-gen5-01',
+                  name: 'Batuk Raghav Shastri',
+                  generation: 5,
+                  gotra: 'Shandilya',
+                  birthYear: '2008',
+                  relation: 'Son (Gurukul Veda Vidyarthi)',
+                  location: 'Sandipani Gurukul, Ujjain',
+                },
+                {
+                  id: 'node-gen5-02',
+                  name: 'Kumari Ananya Shastri',
+                  generation: 5,
+                  gotra: 'Shandilya',
+                  birthYear: '2012',
+                  relation: 'Daughter',
+                  location: 'Varanasi',
+                },
+              ],
             },
           ],
         },
+      ],
+    },
+    {
+      id: 'node-gen2-02',
+      name: 'Pt. Kedarnath Shastri',
+      generation: 2,
+      gotra: 'Shandilya',
+      birthYear: '1918',
+      deathYear: '1995',
+      relation: 'Second Son',
+      spouse: 'Mata Parvati Devi',
+      location: 'Prayagraj',
+      notes: 'Sanskrit Grammar Scholar at Allahabad University.',
+      children: [
         {
-          id: 'node-3-2',
-          name: 'Sri Harishwar Shastri (b. 1980)',
+          id: 'node-gen3-02',
+          name: 'Dr. Anand Shastri',
           generation: 3,
           gotra: 'Shandilya',
-          birthYear: '1980',
-          relation: 'Paternal Uncle (Chacha)',
-          spouse: 'Smt. Ananya Shastri',
-          location: 'Prayagraj',
+          birthYear: '1952',
+          relation: 'Son',
+          location: 'Prayagraj / Delhi',
         },
       ],
     },
@@ -240,141 +264,152 @@ export const INITIAL_GUESTS: GuestRecord[] = [
   {
     id: 'gst-01',
     workspaceId: 'ws-mandir',
-    name: 'Sri Rajesh Agrawal',
-    phone: '+91 98390 12345',
+    name: 'Smt. Sunita Singhania',
+    phone: '+91 98110 44321',
     city: 'Kanpur',
     purpose: 'Pooja Inquiry',
-    visitDate: '2026-08-20',
-    status: 'Follow-Up',
-    assignedSevadar: 'Sri Rameshwar Shastri',
-    notes: 'Wants to sponsor full day Navaratri Chandi Havan.',
+    visitDate: '2026-08-24',
+    referredBy: 'Pt. Loknath Shastri',
+    status: 'Lead',
+    assignedSevadar: 'Sri Subhash Banerjee',
+    notes: 'Inquired about Mahamrityunjaya Anushthan for family welfare.',
   },
   {
     id: 'gst-02',
     workspaceId: 'ws-mandir',
-    name: 'Dr. Meenakshi Sundaram',
-    phone: '+91 94440 98765',
-    city: 'Chennai',
+    name: 'Sri Alok Mukherjee',
+    phone: '+91 94330 99887',
+    city: 'Kolkata',
     purpose: 'Darshan',
-    visitDate: '2026-08-22',
-    status: 'Lead',
-    assignedSevadar: 'Smt. Gayatri Devi',
-    notes: 'Visiting with 6 family members. Inquired about guest kutir.',
+    visitDate: '2026-08-23',
+    status: 'Visited',
+    notes: 'Interested in sponsoring Nitya Annadanam on Ekadashi.',
   },
 ];
 
 export const INITIAL_TREASURY: TreasuryTransaction[] = [
   {
-    id: 'tx-1001',
+    id: 'tx-01',
+    workspaceId: 'ws-mandir',
+    date: '2026-08-24',
+    type: 'Income',
+    category: 'Pooja Dakshina',
+    amount: 5100,
+    handledBy: 'Acharya Devendra Shastri',
+    devoteeName: 'Smt. Gayatri Devi Sharma',
+    devoteeId: 'dev-102',
+    paymentMode: 'UPI / QR',
+    purpose: 'Maha Rudrabhishek with Bilva Patra Archana',
+    is80GEligible: true,
+    taxReceiptIssued: true,
+    taxReceiptNumber: 'SB-80G-2026-0042',
+    auditVerified: true,
+  },
+  {
+    id: 'tx-02',
     workspaceId: 'ws-mandir',
     date: '2026-08-23',
     type: 'Income',
-    category: 'Pranami & Chanda',
-    subcategory: 'Devotee Monthly Seva',
-    amount: 25000,
-    handledBy: 'Sri Rameshwar Shastri (Treasurer)',
-    devoteeId: 'dev-103',
-    devoteeName: 'Sri Vikramaditya Rathore',
-    paymentMode: 'UPI / QR',
-    referenceNo: 'UPI-HDFC-99881203',
-    purpose: 'Monthly Mandir Deepam & Flowers Seva',
+    category: 'Gau Seva Donation',
+    amount: 11000,
+    handledBy: 'Sri Vikramaditya Rathore',
+    devoteeName: 'Sri Rajesh Agrawal',
+    paymentMode: 'Bank Transfer (NEFT)',
+    purpose: 'Monthly Goshala Green Fodder & Vet Care Sponsorship',
     is80GEligible: true,
     taxReceiptIssued: true,
-    taxReceiptNumber: 'SB-80G-2026-001',
+    taxReceiptNumber: 'SB-80G-2026-0043',
     auditVerified: true,
   },
   {
-    id: 'tx-1002',
+    id: 'tx-03',
     workspaceId: 'ws-mandir',
     date: '2026-08-22',
-    type: 'Income',
-    category: 'Pooja Dakshina',
-    subcategory: 'Rudrabhishekam Seva',
-    amount: 5100,
-    handledBy: 'Sri Subhash Banerjee',
-    devoteeId: 'dev-102',
-    devoteeName: 'Smt. Gayatri Devi Sharma',
-    paymentMode: 'Cash',
-    purpose: 'Maha Rudrabhishekam for Family Well-being',
-    is80GEligible: true,
-    taxReceiptIssued: false,
-    auditVerified: true,
-  },
-  {
-    id: 'tx-1003',
-    workspaceId: 'ws-mandir',
-    date: '2026-08-21',
     type: 'Expense',
-    category: 'Pooja Samagri & Ghee',
-    subcategory: 'Consumables Restock',
-    amount: 14200,
-    handledBy: 'Sri Subhash Banerjee',
-    paymentMode: 'Bank Transfer',
-    referenceNo: 'NEFT-AXIS-44331122',
-    purpose: '50kg Pure Desi Cow Ghee for Havan & Akhand Jyot',
+    category: 'Annadanam Provisions',
+    amount: 28500,
+    handledBy: 'Kitchen Supervisor (Sri Ram Das)',
+    vendorName: 'Kashi Desi Ghee & Grain Bhandar',
+    paymentMode: 'Bank Transfer (NEFT)',
+    purpose: 'Pure Desi Bilona Ghee, Basmati Rice & Moong Dal for Bhandara',
     auditVerified: true,
   },
   {
-    id: 'tx-1004',
+    id: 'tx-04',
     workspaceId: 'ws-mandir',
-    date: '2026-08-19',
-    type: 'Expense',
-    category: 'Electricity & Utilities',
-    subcategory: 'Mandir Complex Power',
-    amount: 8650,
-    handledBy: 'Sri Rameshwar Shastri',
-    paymentMode: 'UPI / QR',
-    referenceNo: 'UPPCL-BILL-88771',
-    purpose: 'Mandir Main Sanctum & Sabha Hall Electricity',
-    auditVerified: true,
-  },
-  {
-    id: 'tx-1005',
-    workspaceId: 'ws-mandir',
-    date: '2026-08-18',
+    date: '2026-08-20',
     type: 'Income',
-    category: 'Annadanam Sponsorship',
-    subcategory: 'Mahaprasad Bhandara',
-    amount: 31000,
-    handledBy: 'Sri Vikramaditya Rathore',
-    paymentMode: 'Bank Transfer',
-    referenceNo: 'RTGS-SBI-100998877',
-    purpose: 'Sponsorship of 1,000 Devotee Purnima Bhandara',
+    category: 'Mandir Nirman / Crowdfund',
+    amount: 100000,
+    handledBy: 'Trustee Board Desk',
+    devoteeName: 'Sri Vikramaditya Rathore',
+    devoteeId: 'dev-103',
+    paymentMode: 'Cheque (Clear)',
+    purpose: 'Vedic Yajnashala Roof Renovation and Copper Chhatra',
     is80GEligible: true,
     taxReceiptIssued: true,
-    taxReceiptNumber: 'SB-80G-2026-002',
+    taxReceiptNumber: 'SB-80G-2026-0044',
     auditVerified: true,
   },
+  {
+    id: 'tx-05',
+    workspaceId: 'ws-mandir',
+    date: '2026-08-18',
+    type: 'Expense',
+    category: 'Purohit Sambhavana',
+    amount: 15000,
+    handledBy: 'Mandir Secretary',
+    vendorName: 'Rigveda Parayana Acharyas (5 Pandits)',
+    paymentMode: 'Cash / Voucher',
+    purpose: 'Shravana Somwar Vedic Chant and Archana Sambhavana',
+    auditVerified: true,
+  },
+  {
+    id: 'tx-06',
+    workspaceId: 'ws-goshala',
+    date: '2026-08-23',
+    type: 'Income',
+    category: 'Gau Seva Donation',
+    amount: 25000,
+    handledBy: 'Pt. Hariprasad Dwivedi',
+    devoteeName: 'Brajbhumi Seva Mandal',
+    paymentMode: 'UPI / QR',
+    purpose: 'Green Grass and Mineral Feed for 50 Gir Cows',
+    is80GEligible: true,
+    taxReceiptIssued: true,
+    taxReceiptNumber: 'SB-80G-2026-0045',
+    auditVerified: true,
+  }
 ];
 
 export const INITIAL_ASSETS: AssetRecord[] = [
   {
     id: 'ast-01',
     workspaceId: 'ws-mandir',
-    name: 'Sanctum Swarna Mukut (Gold Crown for Deity)',
-    category: 'Deity Ornaments & Gold',
-    valuation: 4500000,
-    acquisitionDate: '2018-10-15',
-    condition: 'Pristine',
-    custodian: 'Head Priest / Mandir Vault',
-    location: 'Mandir Central Vault',
-    donorName: 'Rathore Dynasty Trust',
+    name: 'Ashtadhatu Sri Radha Krishna Vigrahas',
+    category: 'Sacred Vigrahas & Deities',
+    valuation: 2500000,
+    acquisitionDate: '1998-05-10',
+    condition: 'Pristine / Daily Seva',
+    custodian: 'Head Priest (Mukhya Pujari)',
+    location: 'Garbhagriha (Sanctum Sanctorum)',
+    notes: 'Ancient Ashtadhatu Murtis sanctified with Prana Pratishtha rituals.',
   },
   {
     id: 'ast-02',
     workspaceId: 'ws-mandir',
-    name: 'Mandir Sabha Bhawan & Annakshetra Building',
-    category: 'Land & Building',
-    valuation: 35000000,
-    acquisitionDate: '2005-04-10',
-    condition: 'Good',
-    custodian: 'Board of Trustees',
-    location: 'Plot No 4, Mandir Marg, Varanasi',
+    name: 'Solid Silver Yajnashala Havan Kunda (25 kg)',
+    category: 'Pooja Implements (Silver/Gold)',
+    valuation: 2100000,
+    acquisitionDate: '2015-11-12',
+    condition: 'Excellent',
+    custodian: 'Trustee Board Secretary',
+    location: 'Sacred Vault Room #1',
   },
   {
     id: 'ast-03',
     workspaceId: 'ws-mandir',
-    name: 'Bhandara Sound System & Acoustics (JBL Array)',
+    name: 'JBL Commercial Mandir Sound System & Microphones',
     category: 'Electronics',
     valuation: 350000,
     acquisitionDate: '2023-01-10',
@@ -446,125 +481,107 @@ export const INITIAL_POOJA_BOOKINGS: PoojaBooking[] = [
     tithiDate: '2026-08-25',
     timeSlot: '07:30 AM - 09:00 AM',
     gotra: 'Kashyapa',
-    nakshatra: 'Rohini',
-    rashi: 'Vrishabha',
-    sankalpDescription: 'For family peace, prosperity, health, and removal of obstacles.',
-    purohitAssigned: 'Pt. Vidyadhar Shastri',
+    nakshatra: 'Pushya',
+    rashi: 'Karka',
+    sankalpaIntention: 'Family Health, Spiritual Protection & Moksha Marg',
+    assignedPurohit: 'Pt. Loknath Shastri',
     dakshinaAmount: 5100,
     status: 'Confirmed',
     paymentStatus: 'Paid',
-    receiptRef: 'RCP-RUDRA-1008',
+    receiptRef: 'RCP-MR-2026-881',
+    liveStreamRequested: true,
   },
   {
     id: 'pb-02',
     workspaceId: 'ws-mandir',
-    devoteeName: 'Sri Anupam Mukhopadhyay',
-    phone: '+91 98310 99881',
-    poojaName: 'Satyanarayan Mahapooja & Katha',
-    tithiDate: '2026-08-28 (Purnima)',
-    timeSlot: '05:30 PM - 07:30 PM',
-    gotra: 'Sandilya',
-    nakshatra: 'Pushya',
-    sankalpDescription: 'Griha Pravesh blessing and daughter wedding Mangalam.',
-    purohitAssigned: 'Pt. Ramavatar Shukla',
-    dakshinaAmount: 3100,
+    devoteeId: 'dev-103',
+    devoteeName: 'Sri Vikramaditya Rathore',
+    phone: '+91 94140 77889',
+    poojaName: 'Sahasra Chandi Yajna & Navagraha Shanti',
+    tithiDate: '2026-08-28',
+    timeSlot: '08:00 AM - 01:00 PM',
+    gotra: 'Vatsa',
+    nakshatra: 'Rohini',
+    rashi: 'Vrishabha',
+    sankalpaIntention: 'Global Sanatan Dharma Sanrakshan & Shatru Samhara',
+    assignedPurohit: 'Acharya Vidyadhar Shukla',
+    dakshinaAmount: 21000,
     status: 'Confirmed',
     paymentStatus: 'Paid',
-    receiptRef: 'RCP-SATYA-2009',
+    receiptRef: 'RCP-SC-2026-904',
+    liveStreamRequested: true,
   },
 ];
 
 export const INITIAL_RESIDENT_PUJAS: ResidentPujaSchedule[] = [
   {
     id: 'rp-01',
-    workspaceId: 'ws-mandir',
-    ritualName: 'Mangala Aarti & Suprabhatam',
-    time: '05:00 AM - 05:45 AM',
-    priestName: 'Chief Priest Pt. Achyutanand',
-    deity: 'Lord Shiva & Sri Kashi Vishwanath',
-    samagriList: ['Ghee Lamps (108 wicks)', 'Cow Milk', 'Gangajal', 'Bilva Leaves', 'Chandan'],
-    isOpenForPublic: true,
+    pujaName: 'Mangala Aarti & Suprabhatam',
+    timings: '05:00 AM - 05:45 AM',
+    leadPurohit: 'Mukhya Pujari Sri Ramanuj Das',
+    darshanStatus: 'Open for Devotees',
+    dressCode: 'Traditional Dhoti / Sari',
+    dailyAttendanceAvg: 120,
   },
   {
     id: 'rp-02',
-    workspaceId: 'ws-mandir',
-    ritualName: 'Bhog Aarti & Rajopachara Seva',
-    time: '12:00 PM - 12:30 PM',
-    priestName: 'Pt. Vidyadhar Shastri',
-    deity: 'All Mandir Vigrahas',
-    samagriList: ['56 Bhog Mahaprasad', 'Panchamrit', 'Tulasi / Vilva', 'Karpur'],
-    isOpenForPublic: true,
+    pujaName: 'Madhyahna Bhoga Aarti',
+    timings: '12:00 PM - 12:30 PM',
+    leadPurohit: 'Pt. Keshav Shastri',
+    darshanStatus: 'Live Sanctum Bhog',
+    dressCode: 'Modest Indian Attire',
+    dailyAttendanceAvg: 250,
   },
   {
     id: 'rp-03',
-    workspaceId: 'ws-mandir',
-    ritualName: 'Sandhya Maha Aarti & Pushpanjali',
-    time: '07:00 PM - 07:45 PM',
-    priestName: 'Pt. Ramavatar Shukla',
-    deity: 'Ganga Mata & Shivalaya',
-    samagriList: ['Dhoop', 'Deepam', 'Flower Garlands', 'Conch (Shankh)', 'Mridanga'],
-    isOpenForPublic: true,
+    pujaName: 'Sandhya Maha Aarti with Shankhanaad & Dhoop',
+    timings: '07:00 PM - 07:45 PM',
+    leadPurohit: 'Acharya Devendra Shastri',
+    darshanStatus: 'High Energy Darshan',
+    dressCode: 'Traditional',
+    dailyAttendanceAvg: 600,
   },
   {
     id: 'rp-04',
-    workspaceId: 'ws-mandir',
-    ritualName: 'Shayan Aarti & Lotus Darshan',
-    time: '09:30 PM - 10:00 PM',
-    priestName: 'Chief Priest Pt. Achyutanand',
-    deity: 'Lord Shiva',
-    samagriList: ['Sugandha Attar', 'Karpur Aarti', 'Chamara Seva'],
-    isOpenForPublic: true,
+    pujaName: 'Shayana Aarti & Ekanta Seva',
+    timings: '09:30 PM - 10:00 PM',
+    leadPurohit: 'Mukhya Pujari Sri Ramanuj Das',
+    darshanStatus: 'Closing Sanctum',
+    dressCode: 'Devotee Silence Requested',
+    dailyAttendanceAvg: 80,
   },
 ];
 
 export const INITIAL_PUROHIT_MARKET: PurohitProfile[] = [
   {
     id: 'pur-01',
-    fullName: 'Pt. Vidyadhar Shastri, Jyotishacharya',
-    vidwatTitle: 'Veda Murthy & Gold Medalist (BHU)',
-    specializations: ['Navagraha Shanti', 'Rudrabhishek', 'Vastu Shanti', 'Kundali Milan'],
-    vedicBranch: 'Rigveda',
-    city: 'Varanasi, UP',
-    phone: '+91 94152 33441',
-    email: 'vidyadhar.shastri@vedas.org',
-    languages: ['Sanskrit', 'Hindi', 'Bengali', 'English'],
+    name: 'Pt. Radheshyam Dwivedi',
+    vedicQualification: 'Veda Vibhushan (Shukla Yajurveda), Sampurnanand Sanskrit Univ.',
+    sampradaya: 'Shaiva / Smartha',
+    gotra: 'Bharadwaja',
+    languages: ['Sanskrit', 'Hindi', 'Bhojpuri', 'English'],
+    city: 'Varanasi',
     experienceYears: 24,
-    rating: 4.9,
-    isKycVerified: true,
-    availability: 'Available',
-    dakshinaRange: '₹3,100 - ₹21,000',
+    rating: 4.95,
+    reviewCount: 310,
+    suggestedDakshina: 5100,
+    specializations: ['Maharudrabhishek', 'Vastu Shanti', 'Navagraha Havan', 'Vivah Samskara'],
+    verifiedByMandirTrust: true,
   },
   {
     id: 'pur-02',
-    fullName: 'Acharya Raghavendra Bhattar',
-    vidwatTitle: 'Agama Praveena (Tirupati)',
-    specializations: ['Sudarshana Havan', 'Sri Sukta Homa', 'Vivah Samskara', 'Pran Pratishtha'],
-    vedicBranch: 'Yajurveda',
-    city: 'Bengaluru / Varanasi',
-    phone: '+91 98450 11992',
-    email: 'raghav.bhattar@agama.org',
-    languages: ['Sanskrit', 'Telugu', 'Tamil', 'Kannada', 'Hindi'],
+    name: 'Acharya Mukund Mohan Goswami',
+    vedicQualification: 'Acharya in Jyotish & Karmakanda (Kashi Vidyapeeth)',
+    sampradaya: 'Gaudiya Vaishnava',
+    gotra: 'Kashyapa',
+    languages: ['Bengali', 'Hindi', 'Sanskrit', 'English'],
+    city: 'Kolkata / Nabadwip',
     experienceYears: 18,
-    rating: 4.8,
-    isKycVerified: true,
-    availability: 'Available',
-    dakshinaRange: '₹5,100 - ₹35,000',
-  },
-  {
-    id: 'pur-03',
-    fullName: 'Pt. Debranjan Bhattacharya',
-    vidwatTitle: 'Tantradhyapak & Smartha Scholar',
-    specializations: ['Chandi Path', 'Kali Puja', 'Pitru Tarpan', 'Upanayanam'],
-    vedicBranch: 'Samaveda',
-    city: 'Kolkata / Varanasi',
-    phone: '+91 98300 77112',
-    email: 'debranjan.smartha@gmail.com',
-    languages: ['Sanskrit', 'Bengali', 'Hindi'],
-    experienceYears: 15,
     rating: 4.9,
-    isKycVerified: true,
-    availability: 'Available',
-    dakshinaRange: '₹2,500 - ₹15,000',
+    reviewCount: 240,
+    suggestedDakshina: 4500,
+    specializations: ['Bhagavatam Katha', 'Satyanarayan Vrat Katha', 'Nama Samskar', 'Sudharshana Homam'],
+    verifiedByMandirTrust: true,
   },
 ];
 
@@ -573,29 +590,15 @@ export const INITIAL_PITRU_RECORDS: PitruRecord[] = [
     id: 'pit-01',
     workspaceId: 'ws-mandir',
     devoteeName: 'Sri Rameshwar Shastri',
-    ancestorName: 'Late Pt. Vishwanath Shastri (Father)',
-    relationship: 'Father (Pitru)',
-    tithiLunar: 'Ashwin Krishna Ashtami',
-    paksha: 'Krishna',
-    deathGregorianDate: '1998-10-14',
+    devoteePhone: '+91 98765 11223',
+    ancestorName: 'Late Pt. Dinabandhu Shastri (Father)',
+    relation: 'Father',
     gotra: 'Shandilya',
-    annualShradhAlert: true,
-    pindaDaanBooked: true,
-    contactPhone: '+91 98765 11223',
-  },
-  {
-    id: 'pit-02',
-    workspaceId: 'ws-mandir',
-    devoteeName: 'Smt. Gayatri Devi Sharma',
-    ancestorName: 'Late Smt. Kausalya Devi (Mother-in-law)',
-    relationship: 'Mother-in-law (Sasu Mata)',
-    tithiLunar: 'Bhadrapada Shukla Trayodashi',
-    paksha: 'Shukla',
-    deathGregorianDate: '2015-09-26',
-    gotra: 'Kashyapa',
-    annualShradhAlert: true,
-    pindaDaanBooked: false,
-    contactPhone: '+91 98220 33445',
+    tithiOfDemise: 'Ashwin Krishna Amavasya (Sarva Pitru)',
+    nakshatra: 'Hasta',
+    lastShradhPerformed: '2025-10-02',
+    shradhLocation: 'Gaya Kshetra (Vishnupada)',
+    nextScheduledReminder: '2026-09-21',
   },
 ];
 
@@ -603,44 +606,45 @@ export const INITIAL_COWS: GoshalaCowRecord[] = [
   {
     id: 'cow-01',
     workspaceId: 'ws-goshala',
-    cowTagId: 'GIR-108',
-    name: 'Gomata Nandini (Pure Gir)',
-    breed: 'Gir',
-    gender: 'Gomata',
-    dateOfBirth: '2019-03-12',
-    healthStatus: 'Lactating',
-    dailyMilkYieldLiters: 14,
-    adoptedByDevotee: 'Sri Rameshwar Shastri',
-    monthlyAdoptionFee: 3500,
-    lastVetCheckup: '2026-08-15',
-    notes: 'Very gentle nature. Used for Mandir Panchamrit abhishek.',
+    name: 'Gauri (Maa Kamadhenu)',
+    tagNumber: 'SB-COW-001',
+    breed: 'Gir (Desi Indigenous)',
+    ageYears: 5,
+    gender: 'Female',
+    healthStatus: 'Healthy',
+    dailyMilkLiters: 14,
+    adoptedByDevotee: 'Sri Vikramaditya Rathore',
+    monthlyFodderCost: 3500,
+    photoUrl: 'https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&q=80&w=600',
+    notes: 'Very gentle and motherly temperament. High butterfat Vedic A2 milk used for sanctum Abhishek.',
   },
   {
     id: 'cow-02',
     workspaceId: 'ws-goshala',
-    cowTagId: 'SAH-204',
-    name: 'Gomata Surabhi (Sahiwal)',
+    name: 'Nandi Surabhi',
+    tagNumber: 'SB-COW-002',
     breed: 'Sahiwal',
-    gender: 'Gomata',
-    dateOfBirth: '2020-07-20',
-    healthStatus: 'Pregnant',
-    dailyMilkYieldLiters: 12,
-    adoptedByDevotee: 'Sri Vikramaditya Rathore',
-    monthlyAdoptionFee: 3500,
-    lastVetCheckup: '2026-08-18',
-    notes: 'Expected delivery in Kartika month. Special fodder provided.',
+    ageYears: 4,
+    gender: 'Female',
+    healthStatus: 'Healthy',
+    dailyMilkLiters: 12,
+    adoptedByDevotee: 'Smt. Gayatri Devi Sharma',
+    monthlyFodderCost: 3200,
+    photoUrl: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?auto=format&fit=crop&q=80&w=600',
   },
   {
     id: 'cow-03',
     workspaceId: 'ws-goshala',
-    cowTagId: 'NAN-301',
-    name: 'Nandi Bhagwan Dharma (Kankrej Bull)',
-    breed: 'Kankrej',
-    gender: 'Nandi',
-    dateOfBirth: '2018-01-05',
-    healthStatus: 'Excellent',
-    lastVetCheckup: '2026-08-10',
-    notes: 'Majestic bull leading the daily Vrindavan Parikrama seva.',
+    name: 'Surya (Veer Nandi)',
+    tagNumber: 'SB-BULL-003',
+    breed: 'Tharparkar',
+    ageYears: 6,
+    gender: 'Male',
+    healthStatus: 'Healthy',
+    dailyMilkLiters: 0,
+    monthlyFodderCost: 4000,
+    photoUrl: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?auto=format&fit=crop&q=80&w=600',
+    notes: 'Magnificent pedigree breeding bull preserving pure indigenous Tharparkar lineage.',
   },
 ];
 
@@ -648,25 +652,28 @@ export const INITIAL_ANNADANAM: AnnadanamSponsorship[] = [
   {
     id: 'ann-01',
     workspaceId: 'ws-mandir',
-    sponsorName: 'Rathore Foundation',
-    phone: '+91 94140 77889',
-    occasion: 'Sri Krishna Janmashtami Mahabhandara',
-    date: '2026-08-28',
-    mealType: 'Mahaprasad Lunch',
-    devoteeCountProjected: 2500,
-    contributionAmount: 75000,
-    specialSankalp: 'For the well-being of all Sanatan followers.',
+    sponsorName: 'Sri Vikramaditya Rathore',
+    sponsorPhone: '+91 94140 77889',
+    gotra: 'Vatsa',
+    date: '2026-08-25',
+    mealType: 'Mahaprasad Lunch Bhandara',
+    devoteeCountProjected: 500,
+    contributionAmount: 25000,
+    status: 'Booked',
+    occasion: 'Birth Anniversary of Late Father Pt. Brijmohan Rathore',
   },
   {
     id: 'ann-02',
     workspaceId: 'ws-mandir',
-    sponsorName: 'Banerjee Family (Kolkata)',
-    phone: '+91 93310 44556',
-    occasion: 'Grandfather 80th Birth Anniversary',
-    date: '2026-09-02',
-    mealType: 'Bhandara Dinner',
-    devoteeCountProjected: 500,
-    contributionAmount: 21000,
+    sponsorName: 'Smt. Gayatri Devi Sharma',
+    sponsorPhone: '+91 98220 33445',
+    gotra: 'Kashyapa',
+    date: '2026-08-28',
+    mealType: 'Morning Kheer & Puri Prasad',
+    devoteeCountProjected: 250,
+    contributionAmount: 11000,
+    status: 'Booked',
+    occasion: 'Ekadashi Seva & Family Prosperity',
   },
 ];
 
@@ -674,7 +681,7 @@ export const INITIAL_ROOMS: AshramKutirRoom[] = [
   {
     id: 'room-101',
     workspaceId: 'ws-ashram',
-    roomNumber: 'Kutir 101 (Ganga View)',
+    roomNumber: 'Kutir 101 (Ganga Kutir)',
     roomType: 'Sadhana Kutir',
     capacity: 2,
     isOccupied: false,
@@ -739,34 +746,34 @@ export const INITIAL_CAMPAIGNS: CampaignCrowdfund[] = [
   {
     id: 'cmp-01',
     workspaceId: 'ws-mandir',
-    title: 'Sri Kashi Shivalaya Grand Garbhagriha Renovation',
-    category: 'Mandir Nirman',
-    targetAmount: 5000000,
-    collectedAmount: 3450000,
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
+    title: '50kW Solar Rooftop Installation for Zero-Carbon Mandir Sabha Mandap',
+    description: 'Transforming our sacred temple campus into 100% green solar powered sanctum with Net Metering.',
+    targetAmount: 2500000,
+    collectedAmount: 1850000,
     donorsCount: 420,
+    bannerUrl: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&q=80&w=800',
     status: 'Active',
+    category: 'Eco Mandir / Solar',
     topDonors: [
       { name: 'Sri Vikramaditya Rathore', amount: 500000, city: 'Varanasi' },
-      { name: 'Dr. Anand Mahadevan', amount: 250000, city: 'Bengaluru' },
-      { name: 'Smt. Gayatri Devi', amount: 65000, city: 'Varanasi' },
+      { name: 'Smt. Shanti Devi Trust', amount: 250000, city: 'Kanpur' },
+      { name: 'Shri Ram Seva Samiti', amount: 100000, city: 'Lucknow' },
     ],
   },
   {
     id: 'cmp-02',
     workspaceId: 'ws-goshala',
-    title: 'Surabhi Goshala Solar Water Plant & Fodder Shed',
-    category: 'Goshala Expansion',
+    title: 'Modern Ayurvedic Veterinary Hospital for Desi Cows (Gau Chikitsalaya)',
+    description: 'Building a specialized inpatient emergency trauma and herbal care unit for 200 indigenous abandoned cows.',
     targetAmount: 1500000,
-    collectedAmount: 1120000,
-    startDate: '2026-04-01',
-    endDate: '2026-09-30',
-    donorsCount: 185,
+    collectedAmount: 920000,
+    donorsCount: 290,
+    bannerUrl: 'https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&q=80&w=800',
     status: 'Active',
+    category: 'Gau Seva / Healthcare',
     topDonors: [
-      { name: 'Sri Mohan Lal Yadav', amount: 100000, city: 'Mathura' },
-      { name: 'Shri Krishna Bhakt Sangha', amount: 75000, city: 'Delhi' },
+      { name: 'Pt. Hariprasad Dwivedi', amount: 200000, city: 'Vrindavan' },
+      { name: 'Brajbhumi Seva Mandal', amount: 150000, city: 'Mathura' },
     ],
   },
 ];
@@ -774,17 +781,17 @@ export const INITIAL_CAMPAIGNS: CampaignCrowdfund[] = [
 export const INITIAL_MATRIMONY: MatrimonyProfile[] = [
   {
     id: 'mat-01',
-    fullName: 'Saurabh Shastri (B.Tech, MS Computer Science)',
+    fullName: 'Sri Aditya Shastri (B.Tech IIT, MS USA)',
     gender: 'Male',
-    birthDate: '1996-05-18',
+    birthDate: '1995-04-20',
     birthTime: '06:45 AM',
     birthPlace: 'Varanasi',
     gotra: 'Shandilya',
     nakshatra: 'Rohini',
     rashi: 'Vrishabha',
     manglikStatus: 'Non-Manglik',
-    education: 'MS from US University, Senior Software Engineer',
-    profession: 'Software Architect',
+    education: 'B.Tech IIT Kanpur, MS Computer Science (USA)',
+    profession: 'Senior AI Engineer at Tech Company',
     location: 'Bengaluru / US H1B',
     familyBackground: 'Father Veda scholar in Kashi, mother homemaker. High cultural values.',
     contactFamilyPerson: 'Sri Rameshwar Shastri (Father)',
@@ -901,7 +908,12 @@ export const INITIAL_SHIFTS: SevadarDutyShift[] = [
   },
 ];
 
+// Helper to track sandbox/demo creation counts per workspace and module
+const DEMO_QUOTA_KEY_PREFIX = 'sb_demo_count_';
+const AUTO_PURGE_TTL_MS = 60 * 60 * 1000; // 60 minutes auto-delete retention window
+
 interface DataContextType {
+  // Filtered Isolated Datasets for Active Workspace (Superadmin sees all)
   devotees: DevoteeMember[];
   families: FamilyHousehold[];
   vanshavali: VanshavaliNode;
@@ -925,25 +937,26 @@ interface DataContextType {
   shifts: SevadarDutyShift[];
 
   // Mutators
-  addDevotee: (devotee: Omit<DevoteeMember, 'id' | 'qrCodeRef' | 'joinedDate'>) => void;
+  addDevotee: (devotee: Omit<DevoteeMember, 'id' | 'qrCodeRef' | 'joinedDate'>) => boolean;
   updateDevotee: (id: string, updates: Partial<DevoteeMember>) => void;
   deleteDevotee: (id: string) => void;
-  addFamily: (family: Omit<FamilyHousehold, 'id'>) => void;
+  addFamily: (family: Omit<FamilyHousehold, 'id'>) => boolean;
   updateVanshavali: (tree: VanshavaliNode) => void;
-  addGuest: (guest: Omit<GuestRecord, 'id' | 'visitDate'>) => void;
+  addGuest: (guest: Omit<GuestRecord, 'id' | 'visitDate'>) => boolean;
   promoteGuestToMember: (guestId: string) => void;
-  addTreasuryTransaction: (tx: Omit<TreasuryTransaction, 'id' | 'auditVerified'>) => void;
-  addAsset: (asset: Omit<AssetRecord, 'id'>) => void;
+  addTreasuryTransaction: (tx: Omit<TreasuryTransaction, 'id' | 'auditVerified'>) => boolean;
+  addAsset: (asset: Omit<AssetRecord, 'id'>) => boolean;
   updateInventoryStock: (id: string, newStock: number) => void;
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'lastRestockedDate'>) => void;
-  addPoojaBooking: (booking: Omit<PoojaBooking, 'id' | 'receiptRef' | 'status' | 'paymentStatus'>) => void;
+  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'lastRestockedDate'>) => boolean;
+  addPoojaBooking: (booking: Omit<PoojaBooking, 'id' | 'receiptRef' | 'status' | 'paymentStatus'>) => boolean;
   updatePoojaStatus: (id: string, status: PoojaBooking['status']) => void;
-  addCow: (cow: Omit<GoshalaCowRecord, 'id'>) => void;
+  addCow: (cow: Omit<GoshalaCowRecord, 'id'>) => boolean;
   adoptCow: (cowId: string, sponsorName: string, sponsorGotra?: string, sponsorPhone?: string) => void;
-  addAnnadanam: (ann: Omit<AnnadanamSponsorship, 'id'>) => void;
-  addResolution: (res: Omit<TrusteeResolution, 'id'>) => void;
-  addShift: (shift: Omit<SevadarDutyShift, 'id'>) => void;
+  addAnnadanam: (ann: Omit<AnnadanamSponsorship, 'id'>) => boolean;
+  addResolution: (res: Omit<TrusteeResolution, 'id'>) => boolean;
+  addShift: (shift: Omit<SevadarDutyShift, 'id'>) => boolean;
   addCampaignDonation: (campaignId: string, donorName: string, amount: number, city: string) => void;
+  purgeAutoDeleteRecords: () => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -951,158 +964,341 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { activeWorkspace, currentRole } = useAuthWorkspace();
   const { showToast } = useToast();
+  const initialData = useInitialData();
 
-  const [devotees, setDevotees] = useState<DevoteeMember[]>(() => {
-    const s = localStorage.getItem('sb_devotees');
-    return s ? JSON.parse(s) : INITIAL_DEVOTEES;
+  const [allDevotees, setAllDevotees] = useState<DevoteeMember[]>(() => {
+    const s = initialData.sb_devotees;
+    return s ? s : INITIAL_DEVOTEES;
   });
 
-  const [families, setFamilies] = useState<FamilyHousehold[]>(() => {
-    const s = localStorage.getItem('sb_families');
-    return s ? JSON.parse(s) : INITIAL_FAMILIES;
+  const [allFamilies, setAllFamilies] = useState<FamilyHousehold[]>(() => {
+    const s = initialData.sb_families;
+    return s ? s : INITIAL_FAMILIES;
   });
 
   const [vanshavali, setVanshavali] = useState<VanshavaliNode>(() => {
-    const s = localStorage.getItem('sb_vanshavali');
-    return s ? JSON.parse(s) : INITIAL_VANSHAVALI;
+    const s = initialData.sb_vanshavali;
+    return s ? s : INITIAL_VANSHAVALI;
   });
 
-  const [guests, setGuests] = useState<GuestRecord[]>(() => {
-    const s = localStorage.getItem('sb_guests');
-    return s ? JSON.parse(s) : INITIAL_GUESTS;
+  const [allGuests, setAllGuests] = useState<GuestRecord[]>(() => {
+    const s = initialData.sb_guests;
+    return s ? s : INITIAL_GUESTS;
   });
 
-  const [treasury, setTreasury] = useState<TreasuryTransaction[]>(() => {
-    const s = localStorage.getItem('sb_treasury');
-    return s ? JSON.parse(s) : INITIAL_TREASURY;
+  const [allTreasury, setAllTreasury] = useState<TreasuryTransaction[]>(() => {
+    const s = initialData.sb_treasury;
+    return s ? s : INITIAL_TREASURY;
   });
 
-  const [assets, setAssets] = useState<AssetRecord[]>(() => {
-    const s = localStorage.getItem('sb_assets');
-    return s ? JSON.parse(s) : INITIAL_ASSETS;
+  const [allAssets, setAllAssets] = useState<AssetRecord[]>(() => {
+    const s = initialData.sb_assets;
+    return s ? s : INITIAL_ASSETS;
   });
 
-  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    const s = localStorage.getItem('sb_inventory');
-    return s ? JSON.parse(s) : INITIAL_INVENTORY;
+  const [allInventory, setAllInventory] = useState<InventoryItem[]>(() => {
+    const s = initialData.sb_inventory;
+    return s ? s : INITIAL_INVENTORY;
   });
 
-  const [poojaBookings, setPoojaBookings] = useState<PoojaBooking[]>(() => {
-    const s = localStorage.getItem('sb_pooja_bookings');
-    return s ? JSON.parse(s) : INITIAL_POOJA_BOOKINGS;
+  const [allPoojaBookings, setAllPoojaBookings] = useState<PoojaBooking[]>(() => {
+    const s = initialData.sb_pooja_bookings;
+    return s ? s : INITIAL_POOJA_BOOKINGS;
   });
 
   const [residentPujas] = useState<ResidentPujaSchedule[]>(INITIAL_RESIDENT_PUJAS);
   const [purohits] = useState<PurohitProfile[]>(INITIAL_PUROHIT_MARKET);
-  const [pitruRecords] = useState<PitruRecord[]>(INITIAL_PITRU_RECORDS);
-  const [cows, setCows] = useState<GoshalaCowRecord[]>(INITIAL_COWS);
-  const [annadanamList, setAnnadanamList] = useState<AnnadanamSponsorship[]>(INITIAL_ANNADANAM);
-  const [rooms] = useState<AshramKutirRoom[]>(INITIAL_ROOMS);
-  const [gurukulStudents] = useState<GurukulStudent[]>(INITIAL_GURUKUL_STUDENTS);
-  const [campaigns, setCampaigns] = useState<CampaignCrowdfund[]>(INITIAL_CAMPAIGNS);
+  const [allPitruRecords] = useState<PitruRecord[]>(INITIAL_PITRU_RECORDS);
+  const [allCows, setAllCows] = useState<GoshalaCowRecord[]>(INITIAL_COWS);
+  const [allAnnadanamList, setAllAnnadanamList] = useState<AnnadanamSponsorship[]>(INITIAL_ANNADANAM);
+  const [allRooms] = useState<AshramKutirRoom[]>(INITIAL_ROOMS);
+  const [allGurukulStudents] = useState<GurukulStudent[]>(INITIAL_GURUKUL_STUDENTS);
+  const [allCampaigns, setAllCampaigns] = useState<CampaignCrowdfund[]>(INITIAL_CAMPAIGNS);
   const [matrimonyProfiles] = useState<MatrimonyProfile[]>(INITIAL_MATRIMONY);
   const [shlokas] = useState<ShlokaCardItem[]>(INITIAL_SHLOKAS);
-  const [resolutions, setResolutions] = useState<TrusteeResolution[]>(INITIAL_RESOLUTIONS);
-  const [shifts, setShifts] = useState<SevadarDutyShift[]>(INITIAL_SHIFTS);
+  const [allResolutions, setAllResolutions] = useState<TrusteeResolution[]>(INITIAL_RESOLUTIONS);
+  const [allShifts, setAllShifts] = useState<SevadarDutyShift[]>(INITIAL_SHIFTS);
+
+  // ----------------------------------------------------
+  // AUTOMATIC DATA DELETION / SANDBOX PURGE CYCLE
+  // Temporary added records are marked with _createdAt / _expiresAt timestamps
+  // and cleaned on expiration (default 60 mins).
+  // ----------------------------------------------------
+  const purgeAutoDeleteRecords = useCallback(() => {
+    const now = Date.now();
+
+    setAllDevotees((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllTreasury((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllPoojaBookings((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllInventory((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllAssets((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllCows((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllAnnadanamList((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllGuests((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllFamilies((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllResolutions((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+    setAllShifts((prev) =>
+      prev.filter((item: any) => !item._expiresAt || item._expiresAt > now)
+    );
+  }, []);
+
+  // Run auto-purge timer every 60 seconds
+  useEffect(() => {
+    purgeAutoDeleteRecords();
+    const interval = setInterval(purgeAutoDeleteRecords, 60000);
+    return () => clearInterval(interval);
+  }, [purgeAutoDeleteRecords]);
+
+  // Quota enforcement: Check max 5 inputs per module per organisation
+  const checkAndIncrementModuleQuota = (moduleName: string): boolean => {
+    const key = `${DEMO_QUOTA_KEY_PREFIX}${activeWorkspace.id}_${moduleName}`;
+    const currentCount = parseInt(localStorage.getItem(key) || '0', 10);
+
+    if (currentCount >= 5 && currentRole !== 'superadmin' && currentRole !== 'master_admin') {
+      showToast(
+        `Demo Quota Limit (5 inputs) reached for ${moduleName} in ${activeWorkspace.name}. Records auto-purge on schedule.`,
+        'warning',
+        'Demo Sandbox Quota'
+      );
+      return false;
+    }
+
+    localStorage.setItem(key, (currentCount + 1).toString());
+    return true;
+  };
 
   // Sync to local storage
   useEffect(() => {
-    localStorage.setItem('sb_devotees', JSON.stringify(devotees));
-  }, [devotees]);
+    set('sb_devotees', allDevotees);
+  }, [allDevotees]);
 
   useEffect(() => {
-    localStorage.setItem('sb_families', JSON.stringify(families));
-  }, [families]);
+    set('sb_families', allFamilies);
+  }, [allFamilies]);
 
   useEffect(() => {
-    localStorage.setItem('sb_treasury', JSON.stringify(treasury));
-  }, [treasury]);
+    set('sb_treasury', allTreasury);
+  }, [allTreasury]);
 
   useEffect(() => {
-    localStorage.setItem('sb_assets', JSON.stringify(assets));
-  }, [assets]);
+    set('sb_assets', allAssets);
+  }, [allAssets]);
 
   useEffect(() => {
-    localStorage.setItem('sb_inventory', JSON.stringify(inventory));
-  }, [inventory]);
+    set('sb_inventory', allInventory);
+  }, [allInventory]);
 
   useEffect(() => {
-    localStorage.setItem('sb_pooja_bookings', JSON.stringify(poojaBookings));
-  }, [poojaBookings]);
+    set('sb_pooja_bookings', allPoojaBookings);
+  }, [allPoojaBookings]);
 
-  // Methods
-  const addDevotee = (data: Omit<DevoteeMember, 'id' | 'qrCodeRef' | 'joinedDate'>) => {
+  // ----------------------------------------------------
+  // STRICT WORKSPACE TENANT DATA ISOLATION
+  // Each organization can ONLY see its own data.
+  // Superadmin / God Mode is exempted to allow sovereign control.
+  // ----------------------------------------------------
+  const isGodMode = currentRole === 'superadmin' || currentRole === 'master_admin';
+
+  const devotees = useMemo(() => {
+    return isGodMode
+      ? allDevotees
+      : allDevotees.filter((d) => !d.workspaceId || d.workspaceId === activeWorkspace.id);
+  }, [allDevotees, activeWorkspace.id, isGodMode]);
+
+  const families = useMemo(() => {
+    return isGodMode
+      ? allFamilies
+      : allFamilies.filter((f) => !f.workspaceId || f.workspaceId === activeWorkspace.id);
+  }, [allFamilies, activeWorkspace.id, isGodMode]);
+
+  const guests = useMemo(() => {
+    return isGodMode
+      ? allGuests
+      : allGuests.filter((g) => !g.workspaceId || g.workspaceId === activeWorkspace.id);
+  }, [allGuests, activeWorkspace.id, isGodMode]);
+
+  const treasury = useMemo(() => {
+    return isGodMode
+      ? allTreasury
+      : allTreasury.filter((t) => !t.workspaceId || t.workspaceId === activeWorkspace.id);
+  }, [allTreasury, activeWorkspace.id, isGodMode]);
+
+  const assets = useMemo(() => {
+    return isGodMode
+      ? allAssets
+      : allAssets.filter((a) => !a.workspaceId || a.workspaceId === activeWorkspace.id);
+  }, [allAssets, activeWorkspace.id, isGodMode]);
+
+  const inventory = useMemo(() => {
+    return isGodMode
+      ? allInventory
+      : allInventory.filter((i) => !i.workspaceId || i.workspaceId === activeWorkspace.id);
+  }, [allInventory, activeWorkspace.id, isGodMode]);
+
+  const poojaBookings = useMemo(() => {
+    return isGodMode
+      ? allPoojaBookings
+      : allPoojaBookings.filter((p) => !p.workspaceId || p.workspaceId === activeWorkspace.id);
+  }, [allPoojaBookings, activeWorkspace.id, isGodMode]);
+
+  const pitruRecords = useMemo(() => {
+    return isGodMode
+      ? allPitruRecords
+      : allPitruRecords.filter((p) => !p.workspaceId || p.workspaceId === activeWorkspace.id);
+  }, [allPitruRecords, activeWorkspace.id, isGodMode]);
+
+  const cows = useMemo(() => {
+    return isGodMode
+      ? allCows
+      : allCows.filter((c) => !c.workspaceId || c.workspaceId === activeWorkspace.id);
+  }, [allCows, activeWorkspace.id, isGodMode]);
+
+  const annadanamList = useMemo(() => {
+    return isGodMode
+      ? allAnnadanamList
+      : allAnnadanamList.filter((a) => !a.workspaceId || a.workspaceId === activeWorkspace.id);
+  }, [allAnnadanamList, activeWorkspace.id, isGodMode]);
+
+  const rooms = useMemo(() => {
+    return isGodMode
+      ? allRooms
+      : allRooms.filter((r) => !r.workspaceId || r.workspaceId === activeWorkspace.id);
+  }, [allRooms, activeWorkspace.id, isGodMode]);
+
+  const gurukulStudents = useMemo(() => {
+    return isGodMode
+      ? allGurukulStudents
+      : allGurukulStudents.filter((g) => !g.workspaceId || g.workspaceId === activeWorkspace.id);
+  }, [allGurukulStudents, activeWorkspace.id, isGodMode]);
+
+  const campaigns = useMemo(() => {
+    return isGodMode
+      ? allCampaigns
+      : allCampaigns.filter((c) => !c.workspaceId || c.workspaceId === activeWorkspace.id);
+  }, [allCampaigns, activeWorkspace.id, isGodMode]);
+
+  const resolutions = useMemo(() => {
+    return isGodMode
+      ? allResolutions
+      : allResolutions.filter((r) => !r.workspaceId || r.workspaceId === activeWorkspace.id);
+  }, [allResolutions, activeWorkspace.id, isGodMode]);
+
+  const shifts = useMemo(() => {
+    return isGodMode
+      ? allShifts
+      : allShifts.filter((s) => !s.workspaceId || s.workspaceId === activeWorkspace.id);
+  }, [allShifts, activeWorkspace.id, isGodMode]);
+
+  // ----------------------------------------------------
+  // MUTATOR IMPLEMENTATIONS (With Tenant Tagging & Auto-Delete Expiration)
+  // ----------------------------------------------------
+  const addDevotee = (data: Omit<DevoteeMember, 'id' | 'qrCodeRef' | 'joinedDate'>): boolean => {
+    if (!checkAndIncrementModuleQuota('devotees')) return false;
+
     const id = `dev-${Date.now()}`;
-    const newMember: DevoteeMember = {
+    const now = Date.now();
+    const newMember: any = {
       ...data,
       id,
-      qrCodeRef: `QR-SB-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+      workspaceId: data.workspaceId || activeWorkspace.id,
+      qrCodeRef: `QR-SB-${id.slice(-6).toUpperCase()}`,
       joinedDate: new Date().toISOString().slice(0, 10),
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS, // Auto delete after TTL
     };
-    setDevotees((prev) => [newMember, ...prev]);
 
-    trackSignUp({
-      memberId: id,
-      gotra: newMember.gotra,
-      sevaTier: newMember.sevaTier,
-      workspaceType: activeWorkspace.type,
-      workspaceId: activeWorkspace.id,
-    });
-
-    showToast(`New member ${newMember.fullName} enrolled successfully. PIN: ${newMember.pin}`, 'success', 'Member Registered');
+    setAllDevotees((prev) => [newMember, ...prev]);
+    trackSignUp('Devotee Pass');
+    showToast(
+      `${data.fullName} enrolled into ${activeWorkspace.name}. (Auto-purge scheduled in 60m)`,
+      'success'
+    );
+    return true;
   };
 
   const updateDevotee = (id: string, updates: Partial<DevoteeMember>) => {
-    setDevotees((prev) => prev.map((d) => (d.id === id ? { ...d, ...updates } : d)));
-    showToast('Devotee profile updated', 'success');
+    setAllDevotees((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, ...updates } : d))
+    );
+    showToast('Devotee record updated', 'success');
   };
 
   const deleteDevotee = (id: string) => {
-    setDevotees((prev) => prev.filter((d) => d.id !== id));
-    showToast('Record removed from directory', 'info');
+    setAllDevotees((prev) => prev.filter((d) => d.id !== id));
+    showToast('Member removed from directory', 'info');
   };
 
-  const addFamily = (family: Omit<FamilyHousehold, 'id'>) => {
+  const addFamily = (family: Omit<FamilyHousehold, 'id'>): boolean => {
+    if (!checkAndIncrementModuleQuota('families')) return false;
+
     const id = `fam-${Date.now()}`;
-    setFamilies((prev) => [{ ...family, id }, ...prev]);
+    const now = Date.now();
+    const newFam: any = {
+      ...family,
+      id,
+      workspaceId: family.workspaceId || activeWorkspace.id,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllFamilies((prev) => [newFam, ...prev]);
     showToast(`Household "${family.familyName}" recorded`, 'success');
+    return true;
   };
 
   const updateVanshavali = (tree: VanshavaliNode) => {
     setVanshavali(tree);
-    localStorage.setItem('sb_vanshavali', JSON.stringify(tree));
-    showToast('Vanshavali lineage updated', 'success');
+    set('sb_vanshavali', tree);
+    showToast('Lineage genealogical tree saved', 'success');
   };
 
-  const addGuest = (guest: Omit<GuestRecord, 'id' | 'visitDate'>) => {
+  const addGuest = (guest: Omit<GuestRecord, 'id' | 'visitDate'>): boolean => {
+    if (!checkAndIncrementModuleQuota('guests')) return false;
+
     const id = `gst-${Date.now()}`;
-    const newGuest: GuestRecord = {
+    const now = Date.now();
+    const newGuest: any = {
       ...guest,
       id,
+      workspaceId: guest.workspaceId || activeWorkspace.id,
       visitDate: new Date().toISOString().slice(0, 10),
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
     };
-    setGuests((prev) => [newGuest, ...prev]);
-
-    trackGenerateLead({
-      leadName: guest.name,
-      purpose: guest.purpose,
-      city: guest.city,
-      workspaceType: activeWorkspace.type,
-      workspaceId: activeWorkspace.id,
-    });
-
-    showToast(`Visitor ${guest.name} added to pipeline`, 'success');
+    setAllGuests((prev) => [newGuest, ...prev]);
+    trackGenerateLead('Guest Darshan Lead');
+    showToast(`Guest entry created for ${guest.name}`, 'success');
+    return true;
   };
 
   const promoteGuestToMember = (guestId: string) => {
-    const guest = guests.find((g) => g.id === guestId);
+    const guest = allGuests.find((g) => g.id === guestId);
     if (!guest) return;
 
     addDevotee({
       workspaceId: activeWorkspace.id,
       fullName: guest.name,
       phone: guest.phone,
-      pin: Math.floor(1000 + Math.random() * 9000).toString(),
+      pin: '1008',
       role: 'devotee',
       sevaIndex: 150,
       sevaTier: 'Sadharan',
@@ -1114,21 +1310,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       volunteerHours: 0,
     });
 
-    setGuests((prev) =>
+    setAllGuests((prev) =>
       prev.map((g) => (g.id === guestId ? { ...g, status: 'Promoted' as const } : g))
     );
     showToast(`Guest ${guest.name} promoted to enrolled Member!`, 'success');
   };
 
-  const addTreasuryTransaction = (tx: Omit<TreasuryTransaction, 'id' | 'auditVerified'>) => {
+  const addTreasuryTransaction = (tx: Omit<TreasuryTransaction, 'id' | 'auditVerified'>): boolean => {
+    if (!checkAndIncrementModuleQuota('treasury')) return false;
+
     const id = `tx-${Date.now()}`;
-    const newTx: TreasuryTransaction = {
+    const now = Date.now();
+    const newTx: any = {
       ...tx,
       id,
+      workspaceId: tx.workspaceId || activeWorkspace.id,
       auditVerified: true,
       taxReceiptNumber: tx.is80GEligible ? `SB-80G-${new Date().getFullYear()}-${id.slice(-4)}` : undefined,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
     };
-    setTreasury((prev) => [newTx, ...prev]);
+    setAllTreasury((prev) => [newTx, ...prev]);
 
     if (tx.type === 'Income') {
       trackTreasuryPurchase({
@@ -1145,7 +1347,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Update devotee total if linked
       if (tx.devoteeId) {
-        setDevotees((prev) =>
+        setAllDevotees((prev) =>
           prev.map((d) =>
             d.id === tx.devoteeId
               ? {
@@ -1164,16 +1366,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'success',
       'Double-Entry Ledger Updated'
     );
+    return true;
   };
 
-  const addAsset = (asset: Omit<AssetRecord, 'id'>) => {
+  const addAsset = (asset: Omit<AssetRecord, 'id'>): boolean => {
+    if (!checkAndIncrementModuleQuota('assets')) return false;
+
     const id = `ast-${Date.now()}`;
-    setAssets((prev) => [{ ...asset, id }, ...prev]);
+    const now = Date.now();
+    const newAst: any = {
+      ...asset,
+      id,
+      workspaceId: asset.workspaceId || activeWorkspace.id,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllAssets((prev) => [{ ...newAst }, ...prev]);
     showToast(`Asset "${asset.name}" added to ledger`, 'success');
+    return true;
   };
 
   const updateInventoryStock = (id: string, newStock: number) => {
-    setInventory((prev) =>
+    setAllInventory((prev) =>
       prev.map((item) =>
         item.id === id
           ? { ...item, currentStock: newStock, lastRestockedDate: new Date().toISOString().slice(0, 10) }
@@ -1183,27 +1397,42 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('Inventory stock balance updated', 'success');
   };
 
-  const addInventoryItem = (item: Omit<InventoryItem, 'id' | 'lastRestockedDate'>) => {
+  const addInventoryItem = (item: Omit<InventoryItem, 'id' | 'lastRestockedDate'>): boolean => {
+    if (!checkAndIncrementModuleQuota('inventory')) return false;
+
     const id = `inv-${Date.now()}`;
-    setInventory((prev) => [
-      { ...item, id, lastRestockedDate: new Date().toISOString().slice(0, 10) },
-      ...prev,
-    ]);
+    const now = Date.now();
+    const newInv: any = {
+      ...item,
+      id,
+      workspaceId: item.workspaceId || activeWorkspace.id,
+      lastRestockedDate: new Date().toISOString().slice(0, 10),
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllInventory((prev) => [newInv, ...prev]);
     showToast(`Item "${item.itemName}" added to store`, 'success');
+    return true;
   };
 
   const addPoojaBooking = (
     booking: Omit<PoojaBooking, 'id' | 'receiptRef' | 'status' | 'paymentStatus'>
-  ) => {
+  ): boolean => {
+    if (!checkAndIncrementModuleQuota('pooja')) return false;
+
     const id = `pb-${Date.now()}`;
-    const newBooking: PoojaBooking = {
+    const now = Date.now();
+    const newBooking: any = {
       ...booking,
       id,
+      workspaceId: booking.workspaceId || activeWorkspace.id,
       receiptRef: `RCP-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       status: 'Confirmed',
       paymentStatus: 'Paid',
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
     };
-    setPoojaBookings((prev) => [newBooking, ...prev]);
+    setAllPoojaBookings((prev) => [newBooking, ...prev]);
 
     // Automatically log to treasury ledger
     addTreasuryTransaction({
@@ -1221,23 +1450,35 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     showToast(`Sankalp reserved for ${booking.devoteeName}. Slip generated.`, 'success', 'Pooja Confirmed');
+    return true;
   };
 
   const updatePoojaStatus = (id: string, status: PoojaBooking['status']) => {
-    setPoojaBookings((prev) =>
+    setAllPoojaBookings((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status } : b))
     );
     showToast(`Pooja status updated to ${status}`, 'success');
   };
 
-  const addCow = (cow: Omit<GoshalaCowRecord, 'id'>) => {
+  const addCow = (cow: Omit<GoshalaCowRecord, 'id'>): boolean => {
+    if (!checkAndIncrementModuleQuota('goshala')) return false;
+
     const id = `cow-${Date.now()}`;
-    setCows((prev) => [{ ...cow, id }, ...prev]);
+    const now = Date.now();
+    const newCow: any = {
+      ...cow,
+      id,
+      workspaceId: cow.workspaceId || activeWorkspace.id,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllCows((prev) => [newCow, ...prev]);
     showToast(`Gomata/Nandi record added: ${cow.name}`, 'success');
+    return true;
   };
 
   const adoptCow = (cowId: string, sponsorName: string, sponsorGotra?: string, sponsorPhone?: string) => {
-    setCows((prev) =>
+    setAllCows((prev) =>
       prev.map((c) =>
         c.id === cowId
           ? {
@@ -1254,9 +1495,19 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast(`Gomata successfully adopted by ${sponsorName}!`, 'success', 'Gau Seva Adoption');
   };
 
-  const addAnnadanam = (ann: Omit<AnnadanamSponsorship, 'id'>) => {
+  const addAnnadanam = (ann: Omit<AnnadanamSponsorship, 'id'>): boolean => {
+    if (!checkAndIncrementModuleQuota('annadanam')) return false;
+
     const id = `ann-${Date.now()}`;
-    setAnnadanamList((prev) => [{ ...ann, id }, ...prev]);
+    const now = Date.now();
+    const newAnn: any = {
+      ...ann,
+      id,
+      workspaceId: ann.workspaceId || activeWorkspace.id,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllAnnadanamList((prev) => [newAnn, ...prev]);
     addTreasuryTransaction({
       workspaceId: activeWorkspace.id,
       date: ann.date,
@@ -1271,22 +1522,45 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       taxReceiptIssued: false,
     });
     showToast(`Annadanam sponsored for ${ann.devoteeCountProjected} devotees!`, 'success');
+    return true;
   };
 
-  const addResolution = (res: Omit<TrusteeResolution, 'id'>) => {
+  const addResolution = (res: Omit<TrusteeResolution, 'id'>): boolean => {
+    if (!checkAndIncrementModuleQuota('resolutions')) return false;
+
     const id = `res-${Date.now()}`;
-    setResolutions((prev) => [{ ...res, id }, ...prev]);
+    const now = Date.now();
+    const newRes: any = {
+      ...res,
+      id,
+      workspaceId: res.workspaceId || activeWorkspace.id,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllResolutions((prev) => [newRes, ...prev]);
     showToast(`Resolution ${res.resolutionNumber} saved to governance ledger`, 'success');
+    return true;
   };
 
-  const addShift = (shift: Omit<SevadarDutyShift, 'id'>) => {
+  const addShift = (shift: Omit<SevadarDutyShift, 'id'>): boolean => {
+    if (!checkAndIncrementModuleQuota('shifts')) return false;
+
     const id = `shf-${Date.now()}`;
-    setShifts((prev) => [{ ...shift, id }, ...prev]);
+    const now = Date.now();
+    const newShift: any = {
+      ...shift,
+      id,
+      workspaceId: shift.workspaceId || activeWorkspace.id,
+      _createdAt: now,
+      _expiresAt: now + AUTO_PURGE_TTL_MS,
+    };
+    setAllShifts((prev) => [newShift, ...prev]);
     showToast(`Sevadar shift assigned for ${shift.sevadarName}`, 'success');
+    return true;
   };
 
   const addCampaignDonation = (campaignId: string, donorName: string, amount: number, city: string) => {
-    setCampaigns((prev) =>
+    setAllCampaigns((prev) =>
       prev.map((c) =>
         c.id === campaignId
           ? {
@@ -1359,6 +1633,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addResolution,
         addShift,
         addCampaignDonation,
+        purgeAutoDeleteRecords,
       }}
     >
       {children}

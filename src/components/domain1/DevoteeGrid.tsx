@@ -17,23 +17,26 @@ import {
   FileSpreadsheet,
   X,
   CheckCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuthWorkspace } from '../../context/AuthWorkspaceContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useWorkspaceTaxonomy } from '../../hooks/useWorkspaceTaxonomy';
 import { useData } from '../../context/DataContext';
 import { DevoteeMember, SevaTier } from '../../types';
 import { exportToCSV } from '../../utils/csvEngine';
 import { generateDevoteeCardPDF } from '../../utils/pdfGenerator';
 import { compressAvatarImage } from '../../utils/imageCompression';
 import { useToast } from '../../context/ToastContext';
+import { generateStandardA_AutoLoginQR, generateStandardB_GatePassQR } from '../../utils/qrUtils';
 
 export const DevoteeGrid: React.FC = () => {
   const { activeWorkspace } = useAuthWorkspace();
-  const { getTaxonomy } = useLanguage();
+  
   const { devotees, addDevotee, updateDevotee, deleteDevotee } = useData();
   const { showToast, confirm } = useToast();
 
-  const taxonomy = getTaxonomy(activeWorkspace.type);
+  const taxonomy = useWorkspaceTaxonomy();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGotra, setSelectedGotra] = useState<string>('all');
@@ -53,6 +56,11 @@ export const DevoteeGrid: React.FC = () => {
   const [birthDate, setBirthDate] = useState('');
   const [sevaTier, setSevaTier] = useState<SevaTier>('Vishesh');
   const [photoBase64, setPhotoBase64] = useState<string>('');
+  const [qrModalDevotee, setQrModalDevotee] = useState<DevoteeMember | null>(null);
+  const [standardA_QR, setStandardA_QR] = useState<string>('');
+  const [standardB_QR, setStandardB_QR] = useState<string>('');
+  const [qrTab, setQrTab] = useState<'security' | 'gate'>('security');
+
 
   // Extract unique gotras
   const uniqueGotras = useMemo(() => {
@@ -149,6 +157,16 @@ export const DevoteeGrid: React.FC = () => {
     setSevaTier('Vishesh');
     setPhotoBase64('');
     setEditingDevotee(null);
+  };
+
+
+  const openQrModal = async (devotee: DevoteeMember) => {
+    setQrModalDevotee(devotee);
+    setQrTab('security');
+    const qrA = await generateStandardA_AutoLoginQR(devotee.id, devotee.pin, activeWorkspace.name);
+    const qrB = await generateStandardB_GatePassQR(devotee.id);
+    setStandardA_QR(qrA);
+    setStandardB_QR(qrB);
   };
 
   const openEditModal = (devotee: DevoteeMember) => {
@@ -568,6 +586,93 @@ export const DevoteeGrid: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QR Codes Modal */}
+      {qrModalDevotee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-indigo-500" />
+                  Smart Ecosystem QRs
+                </h3>
+                <p className="text-xs text-slate-500">{qrModalDevotee.fullName} ({qrModalDevotee.gotra})</p>
+              </div>
+              <button
+                onClick={() => setQrModalDevotee(null)}
+                className="p-2 hover:bg-slate-200 rounded-xl transition-colors"
+              >
+                <X className="w-4 h-4 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="flex border-b border-slate-200">
+              <button
+                className={`flex-1 py-3 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${qrTab === 'security' ? 'bg-white text-indigo-600 border-b-2 border-indigo-600' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                onClick={() => setQrTab('security')}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Security & Recovery (Standard A)
+              </button>
+              <button
+                className={`flex-1 py-3 text-xs font-bold transition-colors flex items-center justify-center gap-1 ${qrTab === 'gate' ? 'bg-white text-[#FF9933] border-b-2 border-[#FF9933]' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
+                onClick={() => setQrTab('gate')}
+              >
+                <MapPin className="w-4 h-4" />
+                Gate Pass (Standard B)
+              </button>
+            </div>
+
+            <div className="p-6 flex flex-col items-center text-center">
+              {qrTab === 'security' ? (
+                <div className="animate-in fade-in slide-in-from-right-4">
+                  <div className="p-4 bg-rose-50 border border-rose-100 rounded-xl mb-6 text-left">
+                    <p className="text-[11px] text-rose-800 font-medium leading-relaxed">
+                      <strong className="block text-rose-900 mb-1">Highly Confidential</strong>
+                      Contains Auto-Login tokens and Personal PIN. Used for account recovery. <strong>NEVER</strong> show this to gate volunteers or public scanners.
+                    </p>
+                  </div>
+                  {standardA_QR ? (
+                    <img src={standardA_QR} alt="Security QR" className="w-48 h-48 mx-auto rounded-xl border-4 border-slate-100 shadow-sm" />
+                  ) : (
+                    <div className="w-48 h-48 mx-auto bg-slate-100 rounded-xl animate-pulse" />
+                  )}
+                  <p className="mt-4 text-xs font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg inline-block">
+                    Payload: ?action=autologin
+                  </p>
+                </div>
+              ) : (
+                <div className="animate-in fade-in slide-in-from-right-4">
+                   <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl mb-6 text-left">
+                    <p className="text-[11px] text-emerald-800 font-medium leading-relaxed">
+                      <strong className="block text-emerald-900 mb-1">100% Safe Public Pass</strong>
+                      Contains zero credentials. Used strictly by GuestManager or event scanners for attendance at the door.
+                    </p>
+                  </div>
+                  {standardB_QR ? (
+                    <img src={standardB_QR} alt="Gate Pass QR" className="w-48 h-48 mx-auto rounded-xl border-4 border-slate-100 shadow-sm" />
+                  ) : (
+                    <div className="w-48 h-48 mx-auto bg-slate-100 rounded-xl animate-pulse" />
+                  )}
+                  <p className="mt-4 text-xs font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg inline-block">
+                    Payload: ?action=verify
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+               <button
+                onClick={() => setQrModalDevotee(null)}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

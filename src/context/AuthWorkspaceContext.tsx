@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useInitialData } from './AppInitializer';
+import { set } from 'idb-keyval';
 import { DevoteeMember, UserRole, WorkspaceConfig, WorkspaceType } from '../types';
 
 export const INITIAL_WORKSPACES: WorkspaceConfig[] = [
@@ -220,64 +222,68 @@ interface AuthWorkspaceContextType {
   logout: () => void;
   saveCustomLogo: (base64: string) => void;
   updateWorkspaceDetails: (updates: Partial<WorkspaceConfig>) => void;
+  addWorkspace: (workspace: WorkspaceConfig) => void;
 }
 
 const AuthWorkspaceContext = createContext<AuthWorkspaceContextType | undefined>(undefined);
 
 export const AuthWorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const initialData = useInitialData();
   const [workspaces, setWorkspaces] = useState<WorkspaceConfig[]>(() => {
-    const saved = localStorage.getItem('sanatani_workspaces');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error loading workspaces', e);
-      }
-    }
-    return INITIAL_WORKSPACES;
+    return initialData.sanatani_workspaces || INITIAL_WORKSPACES;
   });
 
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(() => {
-    const saved = localStorage.getItem('sanatani_active_workspace_id');
-    return saved || 'ws-mandir';
+    return initialData.sanatani_active_workspace_id || 'ws-mandir';
   });
 
   const [currentRole, setCurrentRole] = useState<UserRole>(() => {
-    const saved = localStorage.getItem('sanatani_user_role');
-    return (saved as UserRole) || 'head_admin';
+    return initialData.sanatani_user_role || 'head_admin';
   });
 
   const [currentDevotee, setCurrentDevotee] = useState<DevoteeMember | null>(() => {
-    const saved = localStorage.getItem('sanatani_current_devotee');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error('Error parsing devotee', e);
-      }
-    }
-    return null;
+    return initialData.sanatani_current_devotee || null;
   });
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    // Determine if authenticated based on whether we loaded a saved role or devotee
+    // If the data was freshly loaded and role exists (which we default to head_admin for demo)
+    // Actually, to enforce the 3-tier structure, we should default to false unless explicitly logged in,
+    // OR we can check if they have a valid web session saved.
+    const sessionStr = localStorage.getItem('sanatani_web_session');
+    if (sessionStr) {
+      try {
+        const session = JSON.parse(sessionStr);
+        if (session.role) return true;
+      } catch (e) {
+        // ignore
+      }
+    }
+    return false;
+  });
 
   // Sync to localStorage
   useEffect(() => {
-    localStorage.setItem('sanatani_workspaces', JSON.stringify(workspaces));
+    set('sanatani_workspaces', workspaces);
   }, [workspaces]);
 
   useEffect(() => {
-    localStorage.setItem('sanatani_active_workspace_id', activeWorkspaceId);
-    // Keep session object in sync
-    localStorage.setItem(
-      'sanatani_web_session',
-      JSON.stringify({
-        communityId: activeWorkspaceId,
-        role: currentRole,
-        devoteeId: currentDevotee?.id || null,
-      })
-    );
-  }, [activeWorkspaceId, currentRole, currentDevotee]);
+    set('sanatani_active_workspace_id', activeWorkspaceId);
+    
+    if (isAuthenticated) {
+      // Keep session object in sync
+      localStorage.setItem(
+        'sanatani_web_session',
+        JSON.stringify({
+          communityId: activeWorkspaceId,
+          role: currentRole,
+          devoteeId: currentDevotee?.id || null,
+        })
+      );
+    } else {
+      localStorage.removeItem('sanatani_web_session');
+    }
+  }, [activeWorkspaceId, currentRole, currentDevotee, isAuthenticated]);
 
   const activeWorkspace =
     workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0] || INITIAL_WORKSPACES[0];
@@ -308,7 +314,7 @@ export const AuthWorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const switchRole = (role: UserRole) => {
     setCurrentRole(role);
-    localStorage.setItem('sanatani_user_role', role);
+    set('sanatani_user_role', role);
   };
 
   const loginWithPin = (pin: string, devoteeList: DevoteeMember[]): boolean => {
@@ -325,7 +331,7 @@ export const AuthWorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({
       setCurrentDevotee(match);
       setCurrentRole(match.role || 'devotee');
       setIsAuthenticated(true);
-      localStorage.setItem('sanatani_current_devotee', JSON.stringify(match));
+      set('sanatani_current_devotee', match);
       return true;
     }
 
@@ -365,12 +371,27 @@ export const AuthWorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = () => {
     setCurrentRole('devotee');
     setCurrentDevotee(null);
-    localStorage.removeItem('sanatani_current_devotee');
+    setIsAuthenticated(false);
+    set('sanatani_current_devotee', null);
+    localStorage.removeItem('sanatani_web_session');
   };
 
   const saveCustomLogo = (base64: string) => {
-    localStorage.setItem(`sb_logo_${activeWorkspaceId}`, base64);
+    set(`sb_logo_${activeWorkspaceId}`, base64);
     updateWorkspaceDetails({ logoBase64: base64 });
+  };
+
+  const addWorkspace = (newWorkspace: WorkspaceConfig) => {
+    setWorkspaces((prev) => {
+      const existing = prev.find((w) => w.id === newWorkspace.id);
+      if (existing) {
+        return prev.map((w) => (w.id === newWorkspace.id ? newWorkspace : w));
+      }
+      const updated = [...prev, newWorkspace];
+      set('sanatani_workspaces', updated);
+      return updated;
+    });
+    setActiveWorkspaceId(newWorkspace.id);
   };
 
   const currentUser = {
@@ -397,6 +418,7 @@ export const AuthWorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({
         logout,
         saveCustomLogo,
         updateWorkspaceDetails,
+        addWorkspace,
       }}
     >
       {children}

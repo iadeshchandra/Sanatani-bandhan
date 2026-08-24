@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { useAuthWorkspace } from '../../context/AuthWorkspaceContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useWorkspaceTaxonomy } from '../../hooks/useWorkspaceTaxonomy';
 
 export interface NavItem {
   id: string;
@@ -101,6 +102,7 @@ export const MODULE_CATALOG: NavItem[] = [
   { id: 'sandeshBroadcast', name: 'Sandesh WhatsApp/SMS Broadcast', domain: 5, domainTitle: 'Matrimony & Outreach', icon: MessageSquare },
   { id: 'socialWall', name: 'Temple Darshan Wall & Notices', domain: 5, domainTitle: 'Matrimony & Outreach', icon: ImageIcon },
   { id: 'shlokaFeed', name: 'Shloka Wisdom Stream', domain: 5, domainTitle: 'Matrimony & Outreach', icon: Scroll },
+  { id: 'dharmicAssistant', name: 'Dharmic AI Query Desk', domain: 5, domainTitle: 'Matrimony & Outreach', icon: Sparkles, badge: 'Gemini 3.7' },
   { id: 'dharmaMarketing', name: 'Dharma Marketing AI', domain: 5, domainTitle: 'Matrimony & Outreach', icon: Bot, badge: 'Gemini AI' },
 
   // Domain 6
@@ -130,8 +132,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectModule,
 }) => {
   const { activeWorkspace, currentRole } = useAuthWorkspace();
-  const { getTaxonomy } = useLanguage();
-  const taxonomy = getTaxonomy(activeWorkspace.type);
+  const taxonomy = useWorkspaceTaxonomy();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredModules = useMemo(() => {

@@ -4,13 +4,20 @@ import { LanguageProvider } from './context/LanguageContext';
 import { AuthWorkspaceProvider } from './context/AuthWorkspaceContext';
 import { DataProvider } from './context/DataContext';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { AppInitializer } from './context/AppInitializer';
 import { Header } from './components/common/Header';
 import { Sidebar } from './components/common/Sidebar';
 import { Footer } from './components/common/Footer';
 import { QuickChandaModal } from './components/common/QuickChandaModal';
 import { MySpaceModal } from './components/common/MySpaceModal';
 import { GlobalTelemetryModal } from './components/common/GlobalTelemetryModal';
+import { DharmicQueryAssistant } from './components/common/DharmicQueryAssistant';
 import { TawkToWidget } from './components/common/TawkToWidget';
+import { LandingPage } from './components/public/LandingPage';
+import { PortalLogin } from './components/public/PortalLogin';
+import { useAuthWorkspace } from './context/AuthWorkspaceContext';
+import { useData } from './context/DataContext';
+
 
 // Dashboard
 import { DashboardHome } from './components/dashboard/DashboardHome';
@@ -58,6 +65,7 @@ const AppContent: React.FC = () => {
   const [isQuickChandaOpen, setIsQuickChandaOpen] = useState<boolean>(false);
   const [isMySpaceOpen, setIsMySpaceOpen] = useState<boolean>(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState<boolean>(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
 
   const renderActiveDesk = () => {
     switch (activeModule) {
@@ -70,65 +78,105 @@ const AppContent: React.FC = () => {
         );
 
       // Domain 1
+      case 'devotees':
       case 'devotee-grid':
         return <DevoteeGrid />;
+      case 'family':
       case 'household-census':
         return <FamilyHouseholdDesk />;
+      case 'vanshavali':
       case 'vanshavali-tree':
         return <VanshavaliDesk />;
+      case 'guests':
       case 'guest-pipeline':
         return <GuestManagerDesk />;
+      case 'bulkImport':
       case 'universal-csv':
         return <BulkImportDesk />;
 
       // Domain 2
+      case 'treasury':
       case 'treasury-ledger':
         return <TreasuryLedgerDesk onOpenQuickPay={() => setIsQuickChandaOpen(true)} />;
+      case 'taxReceipts':
       case 'tax-receipt-80g':
         return <TaxReceiptDesk />;
+      case 'campaigns':
       case 'mandir-campaigns':
         return <MandirCampaignsDesk />;
+      case 'karmaLedger':
       case 'karma-ledger':
         return <KarmaLedgerDesk />;
+      case 'assets':
       case 'asset-register':
         return <AssetInventoryDesk />;
+      case 'inventory':
       case 'store-inventory':
         return <InventoryDesk />;
 
       // Domain 3
+      case 'poojaBooking':
       case 'pooja-booking':
         return <PoojaBookingDesk />;
+      case 'mandirPuja':
       case 'aarti-roster':
         return <MandirPujaDesk />;
+      case 'purohitMarket':
       case 'purohit-marketplace':
         return <PurohitMarketDesk />;
+      case 'pitruShradh':
       case 'pitru-shradh':
         return <PitruShradhDesk />;
+      case 'panchang':
       case 'panchang-muhurat':
         return <PanchangMuhuratDesk />;
 
       // Domain 4
+      case 'goshala':
       case 'gau-seva-goshala':
         return <GauSevaDesk />;
+      case 'annadanam':
       case 'annadanam-kitchen':
         return <AnnadanamKitchenDesk />;
+      case 'gurukul':
       case 'gurukul-education':
+      case 'gurukulAcademy':
+      case 'vidyalaya':
+      case 'satsang':
+      case 'sanghaDrills':
+      case 'sevaTrust':
+      case 'granthLibrary':
         return <VedicSevaShikshaDesk />;
 
       // Domain 5
+      case 'sandeshBroadcast':
       case 'whatsapp-broadcaster':
         return <WhatsAppBroadcasterDesk />;
+      case 'utsavPanjika':
       case 'events-utsav':
         return <VedicCalendarEventsDesk />;
+      case 'shlokaFeed':
       case 'sanskrit-library':
         return <SanskritLibraryDesk />;
+      case 'dharmicAssistant':
+      case 'dharmic-assistant':
+      case 'dharmaMarketing':
+        return (
+          <DharmicQueryAssistant
+            activeModule={activeModule}
+            onNavigate={(mod) => setActiveModule(mod)}
+          />
+        );
 
       // Domain 6
       case 'workspace-hub':
         return <WorkspaceSelectorDesk />;
       case 'user-roles-rbac':
+      case 'trusteeGovernance':
+      case 'sevadarRoster':
         return <UserRolesDesk />;
       case 'security-audit-log':
+      case 'legalVault':
         return <AuditLogDesk />;
 
       default:
@@ -151,6 +199,7 @@ const AppContent: React.FC = () => {
         onOpenQuickChanda={() => setIsQuickChandaOpen(true)}
         onOpenMySpace={() => setIsMySpaceOpen(true)}
         onOpenTelemetry={() => setIsTelemetryOpen(true)}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
       <div className="flex grow overflow-hidden">
@@ -188,23 +237,81 @@ const AppContent: React.FC = () => {
         onClose={() => setIsTelemetryOpen(false)}
       />
 
+      {/* Dharmic AI Sliding Intelligence Drawer */}
+      <DharmicQueryAssistant
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        activeModule={activeModule}
+        onNavigate={(mod) => {
+          setActiveModule(mod);
+          setIsAssistantOpen(false);
+        }}
+        isDrawer={true}
+      />
+
       <TawkToWidget />
     </div>
   );
 };
 
+
+const AppRouter: React.FC = () => {
+  const { isAuthenticated, loginWithPin } = useAuthWorkspace();
+  const { devotees } = useData();
+  const [view, setView] = useState<'landing' | 'login' | 'signup'>('landing');
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    if (action === 'autologin' && !isAuthenticated) {
+      const pin = params.get('pin');
+      if (pin) {
+        const success = loginWithPin(pin, devotees);
+        if (success) {
+          // Clear URL params safely
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    }
+  }, [isAuthenticated, loginWithPin, devotees]);
+
+  if (isAuthenticated) {
+    return <AppContent />;
+  }
+
+  if (view === 'login' || view === 'signup') {
+    return (
+      <PortalLogin 
+        initialMode={view} 
+        onBack={() => setView('landing')} 
+        onSuccess={() => {}} 
+      />
+    );
+  }
+
+  return (
+    <LandingPage 
+      onLoginClick={() => setView('login')} 
+      onSignupClick={() => setView('signup')} 
+    />
+  );
+};
+
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <LanguageProvider>
-          <AuthWorkspaceProvider>
-            <DataProvider>
-              <AppContent />
-            </DataProvider>
-          </AuthWorkspaceProvider>
-        </LanguageProvider>
-      </ToastProvider>
+      <AppInitializer>
+        <ToastProvider>
+          <LanguageProvider>
+            <AuthWorkspaceProvider>
+              <DataProvider>
+                <AppRouter />
+              </DataProvider>
+            </AuthWorkspaceProvider>
+          </LanguageProvider>
+        </ToastProvider>
+      </AppInitializer>
     </ErrorBoundary>
   );
 }

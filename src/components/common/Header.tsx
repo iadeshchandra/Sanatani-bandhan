@@ -11,9 +11,11 @@ import {
   ChevronDown,
   Building2,
   Coins,
+  Crown,
 } from 'lucide-react';
 import { useAuthWorkspace } from '../../context/AuthWorkspaceContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useWorkspaceTaxonomy } from '../../hooks/useWorkspaceTaxonomy';
 import { calculatePanchang } from '../../utils/panchang';
 import { AppLanguage, UserRole, WorkspaceType } from '../../types';
 
@@ -23,6 +25,8 @@ interface HeaderProps {
   onOpenMySpace: () => void;
   onOpenQuickPay?: () => void;
   onOpenQuickChanda?: () => void;
+  onOpenAssistant?: () => void;
+  onOpenGodMode?: () => void;
   activeModule: string;
   onSelectModule?: (module: string) => void;
   onNavigate?: (module: string) => void;
@@ -34,6 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenMySpace,
   onOpenQuickPay,
   onOpenQuickChanda,
+  onOpenAssistant,
+  onOpenGodMode,
   activeModule,
   onSelectModule,
   onNavigate,
@@ -49,13 +55,13 @@ export const Header: React.FC<HeaderProps> = ({
     currentDevotee,
   } = useAuthWorkspace();
 
-  const { language, setLanguage, t, getTaxonomy } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const [showWsDropdown, setShowWsDropdown] = useState(false);
   const [showRoleDropdown, setShowRoleDropdown] = useState(false);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
 
   const panchang = calculatePanchang();
-  const taxonomy = getTaxonomy(activeWorkspace.type);
+  const taxonomy = useWorkspaceTaxonomy();
 
   const getRoleLabel = (r: UserRole) => {
     switch (r) {
@@ -66,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
       case 'manager':
         return 'Staff Manager';
       case 'devotee':
-        return 'Personal Mode (Devotee)';
+        return `Personal Mode (${taxonomy.memberNoun})`;
     }
   };
 
@@ -203,6 +209,21 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
+            {/* Dharmic Query Assistant AI Trigger */}
+            {onOpenAssistant && (
+              <button
+                type="button"
+                id="dharmic-assistant-header-btn"
+                onClick={onOpenAssistant}
+                title="Dharmic Query Assistant (Gemini 3.7 AI)"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/30 text-amber-700 text-xs font-bold transition-all shadow-xs"
+              >
+                <span className="font-serif font-bold text-amber-600 text-xs">ॐ</span>
+                <span className="hidden md:inline">Dharmic AI</span>
+                <Sparkles className="w-3 h-3 text-amber-600 animate-pulse" />
+              </button>
+            )}
+
             {/* Telemetry Monitor Live Badge */}
             <button
               type="button"
@@ -219,11 +240,25 @@ export const Header: React.FC<HeaderProps> = ({
               type="button"
               id="my-space-btn"
               onClick={onOpenMySpace}
-              title="My Smart Pass & Devotee Card"
-              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-indigo-600 transition-colors"
+              title={`My Smart Pass & ${taxonomy.memberNoun || 'Devotee'} Card`}
+              className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-indigo-600 transition-colors cursor-pointer"
             >
               <QrCode className="w-4 h-4" />
             </button>
+
+            {/* God Mode Sovereign Backend Control Trigger */}
+            {onOpenGodMode && (
+              <button
+                type="button"
+                id="god-mode-header-btn"
+                onClick={onOpenGodMode}
+                title="sonatanibandhan.web.app/own/backend - Sovereign God Mode"
+                className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 hover:text-amber-800 text-[11px] font-bold border border-amber-500/30 transition-all cursor-pointer shadow-xs"
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden lg:inline">God Mode</span>
+              </button>
+            )}
 
             {/* Role Switcher Pill & Profile */}
             <div className="relative border-l border-slate-200 pl-3 ml-1">

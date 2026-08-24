@@ -2,12 +2,14 @@ import React from 'react';
 import { Building2, Sparkles, ShieldCheck, Check, ArrowRight } from 'lucide-react';
 import { useAuthWorkspace } from '../../context/AuthWorkspaceContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useWorkspaceTaxonomy } from '../../hooks/useWorkspaceTaxonomy';
 import { WorkspaceType } from '../../types';
 import { useToast } from '../../context/ToastContext';
 
 export const WorkspaceSelectorDesk: React.FC = () => {
   const { activeWorkspace, switchWorkspace, workspaces } = useAuthWorkspace();
   const { getTaxonomy, language } = useLanguage();
+  const activeTaxonomy = useWorkspaceTaxonomy();
   const { showToast } = useToast();
 
   const domainTaxonomies: WorkspaceType[] = [
@@ -50,7 +52,7 @@ export const WorkspaceSelectorDesk: React.FC = () => {
               10 Domain Universal SaaS Matrix
             </span>
             <span className="text-xs text-stone-400 font-mono">
-              Active: {getTaxonomy(activeWorkspace.type).workspaceLabel}
+              Active: {activeTaxonomy.workspaceLabel}
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold text-stone-100">

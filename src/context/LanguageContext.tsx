@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useInitialData } from './AppInitializer';
+import { set } from 'idb-keyval';
 import { AppLanguage, WorkspaceType } from '../types';
 
 export interface TaxonomyMatrix {
@@ -578,25 +580,36 @@ interface LanguageContextType {
   language: AppLanguage;
   setLanguage: (lang: AppLanguage) => void;
   t: (key: string) => string;
+  safeTranslate: (key: string, en: string, bn: string, hi: string) => string;
   getTaxonomy: (workspaceType: WorkspaceType) => TaxonomyMatrix;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const initialData = useInitialData();
   const [language, setLanguageState] = useState<AppLanguage>(() => {
-    const saved = localStorage.getItem('sanatani_app_lang');
+    const saved = initialData.sanatani_app_lang;
     return (saved as AppLanguage) || 'en';
   });
 
   const setLanguage = (lang: AppLanguage) => {
     setLanguageState(lang);
-    localStorage.setItem('sanatani_app_lang', lang);
+    set('sanatani_app_lang', lang);
   };
 
   const t = (key: string): string => {
     const currentDict = UI_DICTIONARY[language] || UI_DICTIONARY.en;
     return currentDict[key] || UI_DICTIONARY.en[key] || key;
+  };
+
+  const safeTranslate = (key: string, en: string, bn: string, hi: string): string => {
+    switch (language) {
+      case 'bn': return bn;
+      case 'hi': return hi;
+      case 'en':
+      default: return en;
+    }
   };
 
   const getTaxonomy = (workspaceType: WorkspaceType): TaxonomyMatrix => {
@@ -610,7 +623,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, getTaxonomy }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, safeTranslate, getTaxonomy }}>
       {children}
     </LanguageContext.Provider>
   );
